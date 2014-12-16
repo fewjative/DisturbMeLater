@@ -1,0 +1,9 @@
+Package: com.joshdoctors.disturbmelater
+Name: DisturbMeLater
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Dynamically choose how long the 'Do Not Disturb' setting should last.
+Maintainer: Josh Doctors
+Author: Josh Doctors
+Section: Tweaks
