@@ -1,0 +1,10 @@
+{
+    entry = {
+	bundle = DisturbMeLaterSettings;
+	cell = PSLinkCell;
+	detail = DisturbMeLaterSettingsListController;
+	icon = DisturbMeLaterSettings.png;
+	isController = 1;
+	label = DisturbMeLater;
+    };
+}

@@ -9,6 +9,9 @@ DisturbMeLater_CFLAGS = -Wno-error
 export GO_EASY_ON_ME := 1
 include $(THEOS_MAKE_PATH)/tweak.mk
 
+SUBPROJECTS += DisturbMeLaterSettings
+include $(THEOS_MAKE_PATH)/aggregate.mk
+
 before-stage::
 	find . -name ".DS_STORE" -delete
 after-install::
