@@ -1,6 +1,6 @@
 #import <QuartzCore/QuartzCore.h>
 #import <Foundation/Foundation.h>
-#import <PersistentConnection/PCPersistentTimer.h>
+#import <PersistentConnection/PCSimpleTimer.h>
 #import <UIKit/UIKit.h>
 #import <substrate.h>
 
@@ -49,7 +49,7 @@
 - (BOOL)isUILocked;
 @end
 
-static PCPersistentTimer *dndTimer;
+static PCSimpleTimer *dndTimer;
 static UIDatePicker * pickerView;
 static SBCCButtonModule * bm;
 static bool changeStr = NO;
@@ -137,7 +137,24 @@ static BOOL multiCenter = NO;
 
 //Display the time the user set
 %new - (void)displayCustomText
-{
+{	
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[self superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 
@@ -155,6 +172,23 @@ static BOOL multiCenter = NO;
 //Display the timer will be removed
 %new - (void)displayCustomText:(NSString*)str
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[self superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 	[gv presentStatusUpdate:[%c(SBControlCenterStatusUpdate) statusUpdateWithString:str reason:@"doNotDisturb"]];
@@ -203,34 +237,22 @@ static BOOL multiCenter = NO;
 
 			if(!dndTimer)
 			{
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 			else
 			{
 				[dndTimer invalidate];
 				dndTimer = nil;
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 
 			//Timer is not activated(prior to our activation now) but DND is currently enabled
 			if([bm state]!=1)//
 				[self sendActionsForControlEvents:64];//simulate the the button press(64 = touchUpInside) so we get the fancy visual effects
-			else
-			{
-				SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
 
-				if(lockscreenManager.isUILocked)
-				{
-					[self displayCustomText];
-				}
-				else
-				{
-					if(!multiCenter)
-						[self displayCustomText];
-				}
-			}
+			[self displayCustomText];
 		}
 
 		[pickerView release];
@@ -269,17 +291,7 @@ static BOOL multiCenter = NO;
 			[dndTimer invalidate];
 			dndTimer = nil;
 
-			SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
-
-			if(lockscreenManager.isUILocked)
-			{
-				[self displayCustomText:@"DND Removed Timer"];
-			}
-			else
-			{
-				if(!multiCenter)
-					[self displayCustomText:@"DND Removed Timer"];
-			}				
+			[self displayCustomText:@"DND Removed Timer"];
 		}
 	}
 }
@@ -458,27 +470,22 @@ static BOOL multiCenter = NO;
 
 			if(!dndTimer)
 			{
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 			else
 			{
 				[dndTimer invalidate];
 				dndTimer = nil;
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 
 			//Timer is not activated(prior to our activation now) but we DND is currently enabled
 			if([bm state]!=1)//
-			{
 				[self sendActionsForControlEvents:64];//simulate the the button press(64 = touchUpInside) so we get the fancy visual effects
-				[self displayCustomText];
-			}
-			else
-			{
-				[self displayCustomText];
-			}
+			
+			[self displayCustomText];
 		}
 
 		[pickerView release];
@@ -516,6 +523,7 @@ static BOOL multiCenter = NO;
 			NSLog(@"[DML]User would like to remove the timer. DND will remain on however.");
 			[dndTimer invalidate];
 			dndTimer = nil;
+
 			[self displayCustomText:@"DND Removed Timer"];
 		}
 	}
@@ -523,6 +531,23 @@ static BOOL multiCenter = NO;
 
 %new - (void)displayCustomText
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[self superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 
@@ -540,6 +565,23 @@ static BOOL multiCenter = NO;
 //Display the timer will be removed
 %new - (void)displayCustomText:(NSString*)str
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[self superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 	[gv presentStatusUpdate:[%c(SBControlCenterStatusUpdate) statusUpdateWithString:str reason:@"doNotDisturb"]];
@@ -654,27 +696,23 @@ static BOOL multiCenter = NO;
 
 			if(!dndTimer)
 			{
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 			else
 			{
 				[dndTimer invalidate];
 				dndTimer = nil;
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 
 			//Timer is not activated(prior to our activation now) but we DND is currently enabled
 			if([bm state]!=1)//
-			{
 				[self sendActionsForControlEvents:64];//simulate the the button press(64 = touchUpInside) so we get the fancy visual effects
-				[self displayCustomText];
-			}
-			else
-			{
-				[self displayCustomText];
-			}
+			
+			[self displayCustomText];
+
 		}
 
 		[pickerView release];
@@ -712,6 +750,7 @@ static BOOL multiCenter = NO;
 			NSLog(@"[DML]User would like to remove the timer. DND will remain on however.");
 			[dndTimer invalidate];
 			dndTimer = nil;
+
 			[self displayCustomText:@"DND Removed Timer"];
 		}
 	}
@@ -719,6 +758,23 @@ static BOOL multiCenter = NO;
 
 %new - (void)displayCustomText
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[self superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 
@@ -736,6 +792,23 @@ static BOOL multiCenter = NO;
 //Display the timer will be removed
 %new - (void)displayCustomText:(NSString*)str
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[self superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 	[gv presentStatusUpdate:[%c(SBControlCenterStatusUpdate) statusUpdateWithString:str reason:@"doNotDisturb"]];
@@ -854,27 +927,23 @@ static BOOL multiCenter = NO;
 
 			if(!dndTimer)
 			{
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 			else
 			{
 				[dndTimer invalidate];
 				dndTimer = nil;
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 
 			//Timer is not activated(prior to our activation now) but we DND is currently enabled
 			if([bm state]!=1)//
-			{
 				[self sendActionsForControlEvents:64];//simulate the the button press(64 = touchUpInside) so we get the fancy visual effects
-				[self displayCustomText];
-			}
-			else
-			{
-				[self displayCustomText];
-			}
+			
+			[self displayCustomText];
+
 		}
 
 		[pickerView release];
@@ -912,6 +981,7 @@ static BOOL multiCenter = NO;
 			NSLog(@"[DML]User would like to remove the timer. DND will remain on however.");
 			[dndTimer invalidate];
 			dndTimer = nil;
+			
 			[self displayCustomText:@"DND Removed Timer"];
 		}
 	}
@@ -919,6 +989,23 @@ static BOOL multiCenter = NO;
 
 %new - (void)displayCustomText
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[[self superview] superview] superview] superview];
 
 	NSLog(@"View: %@",view);
@@ -938,6 +1025,23 @@ static BOOL multiCenter = NO;
 //Display the timer will be removed
 %new - (void)displayCustomText:(NSString*)str
 {
+	if(auxoInstalled)
+    {
+    	SBLockScreenManager *lockscreenManager = (SBLockScreenManager *)[objc_getClass("SBLockScreenManager") sharedInstance];
+
+    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
+    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
+
+    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
+
+	    if (multiCenter && !lockscreenManager.isUILocked) {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
+	        return;
+	    } else {
+	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
+	    }
+    }
+
 	UIView * view = [[[[self superview] superview] superview] superview];
 	SBControlCenterGrabberView * gv = MSHookIvar<SBControlCenterGrabberView*>(view,"_grabberView");
 	[gv presentStatusUpdate:[%c(SBControlCenterStatusUpdate) statusUpdateWithString:str reason:@"doNotDisturb"]];
@@ -1056,14 +1160,14 @@ static BOOL multiCenter = NO;
 
 			if(!dndTimer)
 			{
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 			else
 			{
 				[dndTimer invalidate];
 				dndTimer = nil;
-				dndTimer = [[PCPersistentTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
+				dndTimer = [[PCSimpleTimer alloc] initWithTimeInterval:seconds serviceIdentifier:@"com.joshdoctors.disturbmelater" target:self selector:@selector(fireAway) userInfo:nil];
 				[dndTimer scheduleInRunLoop:[NSRunLoop mainRunLoop]];
 			}
 
@@ -1137,20 +1241,6 @@ static void loadPrefs()
         NSLog(@"[DisturbMeLater] We are enabled");
     } else {
         NSLog(@"[DisturbMeLater] We are NOT enabled");
-    }
-
-    if(auxoInstalled)
-    {
-    	NSDictionary * auxoDict = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/com.a3tweaks.auxo3.plist"];
-    	NSNumber * multiCenterKey = auxoDict[@"MultiCenter"];
-
-    	multiCenter = multiCenterKey ? [multiCenterKey boolValue] : 0;
-
-	    if (multiCenter) {
-	        NSLog(@"[DisturbMeLater] Auxo3 is installed and user is using multiCenter");
-	    } else {
-	        NSLog(@"[DisturbMeLater] Auxo3 is installed but user is NOT using multiCenter");
-	    }
     }
 }
 
